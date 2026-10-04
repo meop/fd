@@ -182,6 +182,16 @@ jobs:
       shell: bash
       run: $BUILD_CMD build --locked --release --target="${target}"
 
+    - name: Check Windows ARM64 GNU-family portability (fork smoke)
+      if: matrix.job.target == 'aarch64-pc-windows-gnullvm'
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem "target/aarch64-pc-windows-gnullvm/release/*.exe" | Select-Object -First 1
+        llvm-readobj --coff-imports $exe.FullName | Select-String 'Name: ' | Sort-Object -Unique
+        $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+        & $exe.FullName --version
+        if ($LASTEXITCODE -ne 0) { throw "binary failed to start without MSYS2 on PATH" }
+
     - name: Set binary name & path
       id: bin
       shell: bash
